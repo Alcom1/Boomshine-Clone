@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>HTML Canvas Template</title>
+		<style>
+		body
+		{
+			 background: #AACCFF;
+		}
+		
+		canvas
+		{
+			display: block;
+			margin-left: auto;
+			margin-right: auto;
+			margin-top: 80px;
+			background: black;
+		}
+		</style>
+		<script>
+		//IIFE
+		(function()
+		{
+			"use strict";
+			
+			var canvas;
+			var ctx;
+			
+			function init()
+			{
+				//Setup canvas
+				canvas = document.querySelector('canvas');
+				ctx = canvas.getContext("2d");
+				
+				//Start update loop
+				update();
+			}
+			
+			function update()
+			{
+				requestAnimationFrame(update);
+				
+				ctx.fillStyle = "#FFFFFF";
+				ctx.rect(
+					20,
+					20,
+					100,
+					50);
+				ctx.fill();
+				
+				//console.log("FRAME");
+			}
+			
+			window.addEventListener("load",init);
+		}());
+		</script>
+	</head>
+	<body>
+		<canvas id="canvas" width="640" height="400"></canvas>
+	</body>
+</html>
