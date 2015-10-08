@@ -18,6 +18,8 @@
 			background: black;
 		}
 		</style>
+		<script src="basicvector.js"></script>
+		<script src="dot.js"></script>
 		<script>
 		//IIFE
 		(function()
@@ -26,12 +28,22 @@
 			
 			var canvas;
 			var ctx;
+			var singleDot;
+			var dots; 
 			
 			function init()
 			{
 				//Setup canvas
 				canvas = document.querySelector('canvas');
 				ctx = canvas.getContext("2d");
+				
+				//Instantiate objects
+				singleDot = new Dot(15, ctx);
+				dots = [];
+				for(var i = 0; i < 20; i++)
+				{
+					dots.push(15, ctx);
+				}
 				
 				//Start update loop
 				update();
@@ -41,15 +53,11 @@
 			{
 				requestAnimationFrame(update);
 				
-				ctx.fillStyle = "#FFFFFF";
-				ctx.rect(
-					20,
-					20,
-					100,
-					50);
-				ctx.fill();
+				singleDot.offset();
+				singleDot.contain(); 
 				
-				//console.log("FRAME");
+				ctx.clearRect(0, 0, canvas.width, canvas.height);
+				singleDot.draw();
 			}
 			
 			window.addEventListener("load",init);
