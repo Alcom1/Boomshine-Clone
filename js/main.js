@@ -19,23 +19,43 @@ app.main =
 {
 	//  properties
     WIDTH : 640, 
-    HEIGHT: 480,
-    canvas: undefined,
+    HEIGHT : 480,
+	canvas : undefined,
     ctx: undefined,
    	lastTime: 0, // used by calculateDeltaTime() 
     debug: true,
 	
-	NUM_CIRCLES_START: 5,
-	START_RADIUS: 8,
-	MAX_SPEED: 80,
-	CIRCLE_STATE:	//Fake enumeration, actually an object literal
-	{
-		NORMAL: 0,
-		EXPLODING: 1,
-		MAX_SIZE: 2,
-		IMPLODING: 3,
-		DONE: 4
-	},
+	GAME_STATE: Object.freeze
+	({
+		BEGIN : 0,
+		DEFAULT : 1,
+		EXPLODING : 2,
+		ROUND_OVER : 3,
+		REPEAT_LEVEL : 4,
+		END : 5,
+	}),
+	
+	CIRCLE: Object.freeze
+	({
+		NUM_CIRCLES_START : 100,
+		NUM_CIRCLES_END : 20,
+		START_RADIUS : 8,
+		MAX_RADIUS : 45,
+		MIN_RADIUS : 2,
+		MAX_LIFETIME : 2.5,
+		MAX_SPEED : 80,
+		EXPLOSION_SPEED : 60,
+		IMPLOSION_SPEED : 84,
+	}),
+	
+	CIRCLE_STATE: Object.freeze	//Fake enumeration, actually an object literal
+	({
+		NORMAL : 0,
+		EXPLODING : 1,
+		MAX_SIZE : 2,
+		IMPLODING : 3,
+		DONE : 4
+	}),
 	
 	circles : [],
 	numCircles: this.NUM_CIRCLES_START,
@@ -46,6 +66,7 @@ app.main =
 	init : function()
 	{
 		console.log("app.main.init() called");
+		
 		// initialize properties
 		this.canvas = document.querySelector('canvas');
 		this.canvas.width = this.WIDTH;
@@ -53,9 +74,12 @@ app.main =
 		this.ctx = this.canvas.getContext('2d');
 		
 		//Circles!
-		this.numCircles = this.NUM_CIRCLES_START;
+		this.numCircles = this.CIRCLE.NUM_CIRCLES_START;
 		this.circles = this.makeCircles(this.numCircles);
 		console.log("this.circles = " + this.circles);
+		
+		//Hook up mouse events
+		this.canvas.onmousedown = this.doMousedown;
 		
 		// start the game loop
 		this.update();
@@ -125,6 +149,27 @@ app.main =
 		return 1/fps;
 	},
 	
+	doMousedown: function(e)
+	{
+		var mouse = getMouse(e);
+		app.main.checkCircleClicked(mouse);
+	},
+	
+	checkCircleClicked: function(mouse)
+	{
+		//I don't know why we are looping backwards
+		for(var i = this.circles.length - 1; i >= 0; i--)
+		{
+			var c = this.circles[i];
+			if(pointInsideCircle(mouse.x, mouse.y, c))
+			{
+				c.fillStyle = "red";
+				c.xSpeed = c.ySpeed = 0;
+				break;
+			}
+		}
+	},
+	
 	circleHitLeftRight: function (c)
 	{
 		if(c.x < c.radius || c.x > this.WIDTH - c.radius)
@@ -165,16 +210,16 @@ app.main =
 		{
 			var c = {};
 			
-			c.x = getRandom(this.START_RADIUS * 2, this.WIDTH, this.START_RADIUS * 2);
-			c.y = getRandom(this.START_RADIUS * 2, this.HEIGHT, this.START_RADIUS * 2);
+			c.x = getRandom(this.CIRCLE.START_RADIUS * 2, this.WIDTH, this.CIRCLE.START_RADIUS * 2);
+			c.y = getRandom(this.CIRCLE.START_RADIUS * 2, this.HEIGHT, this.CIRCLE.START_RADIUS * 2);
 			
-			c.radius = this.START_RADIUS;
+			c.radius = this.CIRCLE.START_RADIUS;
 			
 			var randomVector = getRandomUnitVector();
 			c.xSpeed = randomVector.x;
 			c.ySpeed = randomVector.y;
 			
-			c.speed = this.MAX_SPEED;
+			c.speed = this.CIRCLE.MAX_SPEED;
 			c.fillStyle = getRandomColor();
 			c.state = this.CIRCLE_STATE.NORMAL;
 			c.lifetime = 0;

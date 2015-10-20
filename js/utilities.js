@@ -129,4 +129,10 @@ Array.prototype.randomElement = function()
 	return this[Math.floor(Math.random() * this.length)];
 }
 
-
+//Using distance squared because 1: circles, 2: sqrt is redundant for circle-circle collision.
+function pointInsideCircle(x, y, I)
+{
+	var dx = x - I.x;
+	var dy = y - I.y;
+	return dx * dx + dy * dy <= I.radius * I.radius;
+}
