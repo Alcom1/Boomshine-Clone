@@ -22,7 +22,12 @@ app.sound = (function()
 		effectAudio = document.querySelector("#effectAudio");
 		effectAudio.volume = 0.3;
 	}
-		
+	
+	function playBGAudio()
+	{
+		bgAudio.play();
+	}
+	
 	function stopBGAudio()
 	{
 		bgAudio.pause();
@@ -40,11 +45,12 @@ app.sound = (function()
 			currentEffect += currentDirection;
 		}
 	}
-		
+	
 	// export a public interface to this module (Why does this need to be same line bracket?)
 	return{
-		init: init,
-		stopBGAudio: stopBGAudio,
-		playEffect: playEffect
+		init : init,
+		playBGAudio : playBGAudio,
+		stopBGAudio : stopBGAudio,
+		playEffect : playEffect
 	}
 }());

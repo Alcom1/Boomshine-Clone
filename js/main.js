@@ -27,22 +27,6 @@ app.main =
 	
 	sound : undefined,
 	
-	bgAudio : undefined,
-	effectAudio : undefined,
-	currentEffect : 0,
-	currentDirection : 1,
-	effectSounds : 
-	[
-		"1.mp3",
-		"2.mp3",
-		"3.mp3",
-		"4.mp3",
-		"5.mp3",
-		"6.mp3",
-		"7.mp3",
-		"8.mp3"
-	],
-	
 	gameState : undefined,
 	roundScore : 0,
 	totalScore : 0,
@@ -175,30 +159,12 @@ app.main =
 		}
 	},
 	
-	stopBGAudio: function()
-	{
-		this.bgAudio.pause();
-		this.bgAudio.currentTime = 0;
-	},
-
-	playEffect: function()
-	{
-		this.effectAudio.src = "media/" + this.effectSounds[this.currentEffect];
-		this.effectAudio.play();
-		this.currentEffect += this.currentDirection;
-		if (this.currentEffect == this.effectSounds.length || this.currentEffect == -1)
-		{
-			this.currentDirection *= -1;
-			this.currentEffect += this.currentDirection;
-		}
-	},
-	
 	pauseGame: function()
 	{
 		this.paused = true;
 		
 		//Stop audio
-		this.stopBGAudio();
+		this.sound.stopBGAudio();
 		
 		//Stop animation loop
 		cancelAnimationFrame(this.animationID);
@@ -214,7 +180,7 @@ app.main =
 		this.paused = false;
 		
 		//Audio
-		this.bgAudio.play();
+		this.sound.playBGAudio();
 		
 		//Restart the loop
 		this.update();
@@ -253,7 +219,7 @@ app.main =
 	doMousedown: function(e)
 	{
 		//Audio
-		this.bgAudio.play();
+		this.sound.playBGAudio();
 		
 		//This does nothing?
 		if(this.paused)
@@ -505,7 +471,7 @@ app.main =
 			if(isOver)
 			{
 				//Stop audio
-				this.stopBGAudio();
+				this.sound.stopBGAudio();
 				
 				this.gameState = this.GAME_STATE.ROUND_OVER;
 				this.totalScore += this.roundScore;
