@@ -25,6 +25,8 @@ app.main =
    	lastTime: 0, // used by calculateDeltaTime() 
     debug: true,
 	
+	sound : undefined,
+	
 	bgAudio : undefined,
 	effectAudio : undefined,
 	currentEffect : 0,
@@ -168,7 +170,7 @@ app.main =
 			if(myKeys.keydown[myKeys.KEYBOARD.KEY_UP] && myKeys.keydown[myKeys.KEYBOARD.KEY_SHIFT])
 			{
 				this.totalScore++;
-				this.playEffect();
+				this.sound.playEffect();
 			}
 		}
 	},
@@ -289,7 +291,7 @@ app.main =
 				c.state = this.CIRCLE_STATE.EXPLODING;
 				this.gameState = this.GAME_STATE.EXPLODING;
 				this.roundScore++;
-				this.playEffect();
+				this.sound.playEffect();
 				break;
 			}
 		}
@@ -483,7 +485,7 @@ app.main =
 						c2.state = this.CIRCLE_STATE.EXPLODING;
 						c2.xSpeed = c2.ySpeed = 0;
 						this.roundScore ++;
-						this.playEffect();
+						this.sound.playEffect();
 					}
 				}
 			}
