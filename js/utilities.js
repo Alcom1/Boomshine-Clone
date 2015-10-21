@@ -28,12 +28,11 @@ function makeColor(red, green, blue, alpha)
 // http://paulirish.com/2009/random-hex-color-code-snippets/
 function getRandomColor()
 {
-	var red = Math.round(Math.random()*200+55);
-	var green = Math.round(Math.random()*200+55);
-	var blue=Math.round(Math.random()*200+55);
-	var color='rgb('+red+','+green+','+blue+')';
+	var hue = Math.round(Math.random()*255);
+	var color = "hsla(" + hue + ", 100%, 60%, 1.0)";
 	// OR	if you want to change alpha
 	// var color='rgba('+red+','+green+','+blue+',0.50)'; // 0.50
+	console.log(color);
 	return color;
 }
 
@@ -142,5 +141,5 @@ function circlesIntersect(c1, c2)
 	var dx = c2.x - c1.x;
 	var dy = c2.y - c1.y;
 	var distance = dx * dx + dy * dy;	//No square roots allowed!
-	return distance  < c1.radius * c1.radius + c2.radius * c2.radius;
+	return distance  < (c1.radius + c2.radius) * (c1.radius + c2.radius);
 }

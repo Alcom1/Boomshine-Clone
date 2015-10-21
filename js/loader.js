@@ -20,20 +20,12 @@ window.onblur = function()
 {
 	console.log("blur at " + Date());
 	
-	app.main.paused = true;
-	
-	cancelAnimationFrame(app.main.animationID);
-	
-	app.main.update();
+	app.main.pauseGame();
 }
 
 window.onfocus = function()
 {
 	console.log("focus at " + Date());
 	
-	cancelAnimationFrame(app.main.animationID);
-	
-	app.main.paused = false;
-	
-	app.main.update();
+	app.main.resumeGame();
 }
