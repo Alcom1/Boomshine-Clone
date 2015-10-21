@@ -25,6 +25,10 @@ app.main =
    	lastTime: 0, // used by calculateDeltaTime() 
     debug: true,
 	
+	gameState : undefined,
+	roundScore : 0,
+	totalScore : 0,
+	
 	GAME_STATE: Object.freeze
 	({
 		BEGIN : 0,
@@ -37,13 +41,13 @@ app.main =
 	
 	CIRCLE: Object.freeze
 	({
-		NUM_CIRCLES_START : 100,
+		NUM_CIRCLES_START : 0,
 		NUM_CIRCLES_END : 20,
 		START_RADIUS : 8,
-		MAX_RADIUS : 45,
+		MAX_RADIUS : 80,
 		MIN_RADIUS : 2,
-		MAX_LIFETIME : 2.5,
-		MAX_SPEED : 80,
+		MAX_LIFETIME : 1.4,
+		MAX_SPEED : 90,
 		EXPLOSION_SPEED : 60,
 		IMPLOSION_SPEED : 84,
 	}),
@@ -81,6 +85,12 @@ app.main =
 		//Hook up mouse events
 		this.canvas.onmousedown = this.doMousedown;
 		
+		//Initial Game State
+		this.gameState = this.GAME_STATE.BEGIN;
+		
+		// load level
+		this.reset();
+		
 		// start the game loop
 		this.update();
 	},
@@ -90,7 +100,7 @@ app.main =
 		// 1) LOOP
 		// schedule a call to update()
 	 	this.animationID = requestAnimationFrame(this.update.bind(this));
-	 	
+		
 	 	// 2) PAUSED?
 	 	// if so, bail out of loop
 	 	
@@ -100,7 +110,9 @@ app.main =
 	 	// 4) UPDATE
 	 	// move circles
 		this.moveCircles(dt);
-		// Bounce circles
+		
+		//Check for collisions
+		this.checkForCollisions();
 	 	
 		// 5) DRAW	
 		// i) draw background
@@ -111,6 +123,10 @@ app.main =
 		this.drawCircles(this.ctx);
 	
 		// iii) draw HUD
+		this.ctx.globalAlpha = 1.0;
+		this.drawHUD(this.ctx);
+		
+		// iv) draw Pause Screen
 		if(this.paused)
 		{
 			this.drawPauseScreen(this.ctx);
@@ -123,7 +139,6 @@ app.main =
 			// draw dt in bottom right corner
 			this.fillText("dt: " + dt.toFixed(3), this.WIDTH - 150, this.HEIGHT - 10, "18pt courier", "white");
 		}
-		
 	},
 	
 	fillText: function(string, x, y, css, color)
@@ -149,8 +164,38 @@ app.main =
 		return 1/fps;
 	},
 	
+	reset: function()
+	{
+		this.numCircles += 5;
+		this.roundScore = 0;
+		this.circles = this.makeCircles(this.numCircles);
+	},
+	
 	doMousedown: function(e)
 	{
+		//Main
+		var main = app.main;
+		
+		//This does nothing?
+		if(main.paused)
+		{
+			main.paused = false;
+			main.update();
+			return;
+		}
+		
+		//Player can only click on one circle. Return if exploding.
+		if(main.gameState == main.GAME_STATE.EXPLODING)
+			return;
+		
+		//Click to go to next round
+		if(main.gameState == main.GAME_STATE.ROUND_OVER)
+		{
+			main.gameState = main.GAME_STATE.DEFAULT;
+			main.reset();
+			return;
+		}
+		
 		var mouse = getMouse(e);
 		app.main.checkCircleClicked(mouse);
 	},
@@ -165,6 +210,9 @@ app.main =
 			{
 				c.fillStyle = "red";
 				c.xSpeed = c.ySpeed = 0;
+				c.state = this.CIRCLE_STATE.EXPLODING;
+				this.gameState = this.GAME_STATE.EXPLODING;
+				this.roundScore++;
 				break;
 			}
 		}
@@ -235,9 +283,19 @@ app.main =
 	
 	drawCircles: function(ctx)
 	{
+		this.ctx.globalAlpha = 0.9;
+		
+		if(this.gameState == this.GAME_STATE.ROUND_OVER)
+		{
+			this.ctx.globalAlpha = 0.25;
+		}
+		
 		for(var i = 0; i < this.circles.length; i++)
 		{
 			var c = this.circles[i];
+			if(c.state === this.CIRCLE_STATE.DONE)
+				continue;
+			
 			c.draw(ctx);
 		}
 	},
@@ -247,13 +305,153 @@ app.main =
 		for(var i = 0; i < this.circles.length; i++)
 		{
 			var c = this.circles[i];
+			
+			//Skip done circles.
+			if(c.state === this.CIRCLE_STATE.DONE)
+			{
+				continue;
+			}
+			
+			//Explode exploding circles
+			if(c.state === this.CIRCLE_STATE.EXPLODING)
+			{
+				//Grow
+				c.radius += this.CIRCLE.EXPLOSION_SPEED * dt;
+				
+				if(c.radius >= this.CIRCLE.MAX_RADIUS)
+				{
+					c.state = this.CIRCLE_STATE.MAX_SIZE;
+					console.log("circle #" + i + " hit CIRCLE.MAX_RADIUS");
+				}
+			}
+			
+			//Circle at max size
+			if(c.state === this.CIRCLE_STATE.MAX_SIZE)
+			{
+				//Exist at max size for a duration
+				c.lifetime += dt;
+				
+				//If reached max lifetime, implode
+				if(c.lifetime >= this.CIRCLE.MAX_LIFETIME)
+				{
+					c.state = this.CIRCLE_STATE.IMPLODING;
+					console.log("circle #" + i + " hit CIRCLE.MAX_LIFETIME");
+				}
+				continue;
+			}
+			
+			//Implode imploding circles
+			if(c.state === this.CIRCLE_STATE.IMPLODING)
+			{
+				//Shrink
+				c.radius -= this.CIRCLE.IMPLOSION_SPEED * dt;
+				
+				//If radius is less than the minimum radius, circle will disappear and be done.
+				if(c.radius <= this.CIRCLE.MIN_RADIUS)
+				{
+					console.log("circle #" + i + " hit CIRCLE.NIM_RADIUS and is gone");
+					c.state = this.CIRCLE_STATE.DONE;
+					continue;
+				}
+			}
+			
+			//Move circles
 			c.move(dt);
 			
+			//Did the circle enter the screen edge?
 			if(this.circleHitLeftRight(c))
 				c.xSpeed *= -1;
 			if(this.circleHitTopBottom(c))
 				c.ySpeed *= -1;
 		}
+	},
+	
+	checkForCollisions: function()
+	{
+		if(this.gameState == this.GAME_STATE.EXPLODING)
+		{
+			// check for collisions between circles
+			for(var i=0;i<this.circles.length; i++)
+			{
+				var c1 = this.circles[i];
+				
+				// only check for collisions if c1 is exploding
+				if (c1.state === this.CIRCLE_STATE.NORMAL) continue;   
+				if (c1.state === this.CIRCLE_STATE.DONE) continue;
+				
+				for(var j=0;j<this.circles.length; j++)
+				{
+					var c2 = this.circles[j];
+					
+					// don't check for collisions if c2 is the same circle
+					if (c1 === c2) continue; 
+					
+					// don't check for collisions if c2 is already exploding 
+					if (c2.state != this.CIRCLE_STATE.NORMAL )
+						continue;  
+					
+					// don't check for collisions if c2 is done
+					if (c2.state === this.CIRCLE_STATE.DONE)
+						continue;
+				
+					// Now you finally can check for a collision
+					if(circlesIntersect(c1,c2) )
+					{
+						c2.state = this.CIRCLE_STATE.EXPLODING;
+						c2.xSpeed = c2.ySpeed = 0;
+						this.roundScore ++;
+					}
+				}
+			}
+			
+			// round over?
+			var isOver = true;
+			for(var i=0;i<this.circles.length; i++)
+			{
+				var c = this.circles[i];
+				if(c.state != this.CIRCLE_STATE.NORMAL && c.state != this.CIRCLE_STATE.DONE)
+				{
+					isOver = false;
+					break;
+				}
+			}
+		
+			if(isOver)
+			{
+				this.gameState = this.GAME_STATE.ROUND_OVER;
+				this.totalScore += this.roundScore;
+			}	
+		}
+	},
+	
+	drawHUD: function(ctx)
+	{
+		ctx.save();	//Isolated drawing sequence
+		// draw score
+      	// fillText(string, x, y, css, color)
+		this.fillText("This Round: " + this.roundScore + " of " + this.numCircles, 20, 20, "14pt courier", "#ddd");
+		this.fillText("Total Score: " + this.totalScore, this.WIDTH - 200, 20, "14pt courier", "#ddd");
+
+		// BEGIN SCREEN
+		if(this.gameState == this.GAME_STATE.BEGIN)
+		{
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+			this.fillText("To begin, click a circle", this.WIDTH/2, this.HEIGHT/2, "30pt courier", "white");
+		}
+	
+		// ROUND OVER SCREEN
+		if(this.gameState == this.GAME_STATE.ROUND_OVER)
+		{
+			ctx.save();
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+			this.fillText("Round Over", this.WIDTH/2, this.HEIGHT/2 - 40, "30pt courier", "red");
+			this.fillText("Click to continue", this.WIDTH/2, this.HEIGHT/2, "30pt courier", "red");
+			this.fillText("Next round there are " + (this.numCircles + 5) + " circles", this.WIDTH/2 , this.HEIGHT/2 + 35, "20pt courier", "#ddd");
+		}
+		
+		ctx.restore();
 	},
 	
 	drawPauseScreen: function(ctx)

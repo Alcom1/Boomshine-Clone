@@ -136,3 +136,11 @@ function pointInsideCircle(x, y, I)
 	var dy = y - I.y;
 	return dx * dx + dy * dy <= I.radius * I.radius;
 }
+
+function circlesIntersect(c1, c2)
+{
+	var dx = c2.x - c1.x;
+	var dy = c2.y - c1.y;
+	var distance = dx * dx + dy * dy;	//No square roots allowed!
+	return distance  < c1.radius * c1.radius + c2.radius * c2.radius;
+}
